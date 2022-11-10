@@ -1,6 +1,0 @@
-*.o
-eui64
-std
-std.cpp
-*_output*.txt
-!Makefile

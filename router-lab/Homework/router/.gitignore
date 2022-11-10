@@ -1,5 +1,0 @@
-*.o
-router
-std
-std.cpp
-!Makefile
