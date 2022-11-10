@@ -1,0 +1,28 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt install -y libpcap-dev libreadline-dev libncurses-dev
+    - name: CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -DBACKEND=${{ runner.os }}
+        make

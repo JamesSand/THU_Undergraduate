@@ -1,0 +1,20 @@
+if(${BACKEND} STREQUAL LINUX)
+    file(GLOB_RECURSE SOURCES src/linux/*.cpp)
+    file(GLOB_RECURSE HEADERS src/linux/*.h)
+    set(LIBRARIES pcap)
+elseif(${BACKEND} STREQUAL MACOS)
+    file(GLOB_RECURSE SOURCES src/macOS/*.cpp)
+    set(LIBRARIES pcap)
+elseif(${BACKEND} STREQUAL STDIO)
+    file(GLOB_RECURSE SOURCES src/stdio/*.cpp)
+    set(LIBRARIES pcap)
+endif()
+set(SOURCES ${SOURCES} src/common.cpp)
+
+# add sources from homework
+set(SOURCES ${SOURCES} ../Homework/eui64/eui64.cpp ../Homework/internet-checksum/checksum.cpp)
+
+add_library(router_hal ${SOURCES} ${HEADERS})
+target_include_directories(router_hal PUBLIC include)
+target_include_directories(router_hal PUBLIC ../Homework/eui64 ../Homework/internet-checksum)
+target_link_libraries(router_hal ${LIBRARIES})
