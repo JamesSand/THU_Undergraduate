@@ -1,10 +1,10 @@
-## THU course Homework
+## THU Course Homework
 
 > By JamesSand
 
-### 目录结构
+### What's Inside
 
-router lab: 计算机网络原理 router lab IPv6
+~~router lab: 计算机网络原理 router lab IPv6~~
 
 ### Others
 
