@@ -12,6 +12,6 @@ email: shazz20@mails.tsinghua.edu.cn
 
 - 管理学的思与行
 
-- 计算机图形学基础
+  
 
   
