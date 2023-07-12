@@ -12,6 +12,10 @@ email: shazz20@mails.tsinghua.edu.cn
 
 - 管理学的思与行
 
+- 编译原理
+
+- 计算机组成原理
+
   
 
   
