@@ -14,13 +14,12 @@ https://github.com/JamesSand/ComputerOrganization2022Labs
 https://github.com/JamesSand/ComputerOrganization2022InstructionPipeline
 计组大实验↑
 
-
+编译原理
+https://github.com/JamesSand/CompilerConstruction2022FallLabs
 
 ## TODO
 
 - 管理学的思与行
-
-- 编译原理
 
 
   
