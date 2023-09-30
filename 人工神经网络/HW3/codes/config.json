@@ -1,0 +1,19 @@
+{
+  "activation_function": "gelu",
+  "architectures": [
+    "TfmrLMHeadModel"
+  ],
+  "attn_pdrop": 0.1,
+  "bos_token_id": 50256,
+  "embd_pdrop": 0.1,
+  "eos_token_id": 50256,
+  "initializer_range": 0.02,
+  "layer_norm_epsilon": 1e-05,
+  "n_ctx": 35,
+  "n_embd": 768,
+  "n_head": 12,
+  "n_layer": 3,
+  "n_positions": 1024,
+  "resid_pdrop": 0.1,
+  "vocab_size": 50257
+}

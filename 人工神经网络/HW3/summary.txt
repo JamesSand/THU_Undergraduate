@@ -1,0 +1,229 @@
+########################
+# Filled Code
+########################
+# ..\codes\model_tfmr.py:1
+
+            # breakpoint()
+
+            # 下三角矩阵
+            torch.tril(torch.ones((max_positions, max_positions), dtype=torch.uint8)).reshape(1, 1, max_positions, max_positions),
+
+
+# ..\codes\model_tfmr.py:2
+        # breakpoint()
+        # d = 64
+        # query = [32, 12, 36, 64]
+        key_for_query = key.transpose(-1, -2)
+        attn_weights = torch.matmul(query, key_for_query)
+
+        # 除以 根号 d
+        # 从下三角矩阵中截取一部分
+        # causal_mask = [1, 1, 36, 36]
+
+        query_length = query.shape[-2]
+        key_length = key.shape[-2]
+
+        causal_mask = self.bias[:, :, key_length - query_length : key_length, :key_length].bool()
+
+        # where (condition, x, y)
+        # 概率归一化
+        attn_weights = nn.Softmax(dim=-1)(attn_weights)
+        # drop out
+        attention_result = torch.matmul(attn_weights, value)
+
+        return attention_result, attn_weights
+
+# ..\codes\model_tfmr.py:3
+
+        # [batch size, seq length, feature dim]
+        # tensor = [32, 36, 768]
+
+        bs = tensor.shape[0]
+        seq_len = tensor.shape[1]
+        # split head here
+        ret_shape = (bs, seq_len, num_heads, attn_head_size)
+        # breakpoint()
+        tensor = tensor.reshape(*ret_shape)
+
+        # change head to front
+        # (batch, head, seq_length, head_features)
+        output = tensor.permute(0, 2, 1, 3)
+        return output
+
+
+# ..\codes\model_tfmr.py:4
+
+        # view 不会改变实际存储方式
+        # congtiguous 彻底改变空间结构
+        # reshape
+
+        # change sequence to [batch size, seq len, heads, head feature]
+        tensor = tensor.permute(0, 2, 1, 3).contiguous()
+
+        bs = tensor.shape[0]
+        seq_len = tensor.shape[1]
+
+        new_shape = (bs, seq_len, num_heads * attn_head_size,)
+
+        # [batch size, seq len, total dimension]
+        output = tensor.reshape(new_shape)
+
+        return output
+
+
+# ..\codes\model_tfmr.py:5
+
+        # residual connection
+        hidden_states = attn_output + residual
+        residual = hidden_states
+
+        # layer norm here
+        hidden_states = self.ln_2(hidden_states)
+
+        # residual connection
+        hidden_states = residual + self.mlp(hidden_states)
+
+
+# ..\codes\model_tfmr.py:6
+
+        if past_key_values:
+            past_length = past_key_values[0][0].shape[-2]
+        else:
+            past_length = 0
+            past_key_values = tuple([None] * len(self.h))
+
+        # breakpoint()
+
+        # input shape = [32, 36]
+        seq_len = input_shape[-1]
+        start = past_length
+        end = past_length + seq_len
+
+        position_ids = torch.arange(start, end, dtype=torch.long, device=device)
+        # position_ids = [36]
+        # breakpoint()
+        position_ids_expand = position_ids.unsqueeze(0)
+
+        position_ids = position_ids_expand.reshape(-1, seq_len)
+        position_embeds = self.wpe(position_ids)
+
+
+# ..\codes\model_tfmr.py:7
+
+            # lm_logits = [32, 36, 50257], ignore the end of sentence
+            logits_no_eos = lm_logits[..., :-1, :].contiguous()
+            # label = [32, 36], ignore the begin of sentence
+            labels_no_bos = labels[..., 1:].contiguous()
+
+            # breakpoint()
+            bs = labels_no_bos.shape[0]
+
+            pad_pos = torch.eq(labels_no_bos, PAD_ID).to(torch.float).to(labels.device)
+
+            # breakpoint()
+            pad_pos = torch.cat([torch.zeros([bs, 1]).to(labels.device), pad_pos[:, :-1]], 1)
+
+            loss_mask = 1. - pad_pos
+
+            dict_len = logits_no_eos.shape[-1]
+            logits_for_loss = logits_no_eos.reshape(-1, dict_len)
+            labels_for_loss = labels_no_bos.view(-1)
+
+            loss = ce_loss_fct(logits_for_loss, labels_for_loss)
+            loss = torch.mean(torch.sum(loss.view(labels_no_bos.size()[0], -1) * loss_mask, 1) / (torch.sum(loss_mask, 1) + 1e-20))
+
+
+# ..\codes\model_tfmr.py:8
+
+                        # 排序
+                        sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+                        # 向左堆积求和
+                        predict_prob = F.softmax(sorted_logits, dim=-1)
+                        cumulative_probs = torch.cumsum(predict_prob, dim=-1)
+
+                        # Remove tokens with cumulative probability above the threshold
+                        sorted_indices_to_remove = cumulative_probs > top_p
+                        # 防止一个也选不中的情况
+                        sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
+                        sorted_indices_to_remove[:, 0] = 0
+
+                        bs = logits.shape[0]
+                        dict_len = logits.shape[1]
+                        # 构造一维偏移量
+                        seq = torch.arange(bs, device=device, dtype=torch.long)
+                        seq_single = seq.unsqueeze(-1)
+                        seq = seq_single * dict_len
+
+                        sorted_indices_single = (sorted_indices + seq)
+
+                        indices_to_remove = torch.masked_select(sorted_indices_single, sorted_indices_to_remove)
+                        # change into dimension 1
+                        logits_single = logits.reshape(-1)
+                        logits = torch.index_fill(logits_single, 0, indices_to_remove, -float("inf"))
+                        logits = logits.reshape(bs, dict_len)
+
+
+# ..\codes\model_tfmr.py:9
+
+                        # 排序
+                        sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+                        bs = logits.shape[0]
+                        dict_len = logits.shape[1]
+
+                        # 构造一维偏移量
+                        seq = torch.arange(bs, device=device, dtype=torch.long)
+                        seq_single = seq.unsqueeze(-1)
+                        seq = seq_single * dict_len
+
+                        # 转换indices
+                        sorted_indices_single = (sorted_indices + seq)
+                        index_to_remove = sorted_indices[...,top_k:]
+                        index_to_remove = index_to_remove.reshape(-1)
+
+                        logits_single = logits.reshape(-1)
+
+                        logits_single = torch.index_fill(logits_single, 0, index_to_remove, -float("inf"))
+
+                        logits = logits_single.reshape(bs, dict_len)
+
+
+
+# ..\codes\main.py:1
+
+            # implement loss here
+
+            # target_ids = [32, 35]
+            target_ids = input_ids[:, 1:] # input ids is the dict number of each input word
+            input_ids = input_ids[:, :-1] # model input donot need the end of sentence
+            predict_ids = model(input_ids)["logits"] # lm_logits is predict result [32, 35, 50257]
+
+            pad_pos = torch.eq(target_ids, PAD_ID).to(torch.float).to(device) # input word which is padding
+            pad_pos = torch.cat([torch.zeros([ed-st, 1]).to(device), pad_pos[:, :-1]], 1) # shift right to match output result shape
+
+            # prepare for loss
+            dict_len = predict_ids.shape[-1]
+            predict_for_loss = predict_ids.reshape(-1, dict_len)
+            target_for_loss = target_ids.reshape(-1)
+
+            # calculate loss
+            # here loss is [1120]
+            loss = ce_loss_fct(predict_for_loss, target_for_loss)
+
+            bs = input_ids.shape[0]
+            # loss = [32, 35]
+            loss = loss.reshape(bs, -1)
+
+            loss_valid = 1. - pad_pos
+
+            loss = torch.sum(loss * loss_valid, 1) / (torch.sum(loss_valid, 1) + 1e-20)
+
+
+
+########################
+# References
+########################
+
+########################
+# Other Modifications
+########################
+

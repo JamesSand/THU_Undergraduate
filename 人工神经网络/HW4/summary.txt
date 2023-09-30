@@ -1,0 +1,79 @@
+########################
+# Additional Files
+########################
+# data
+# inception
+
+########################
+# Filled Code
+########################
+# ..\codes\GAN\GAN.py:1
+            nn.ConvTranspose2d(
+                in_channels = latent_dim,
+                out_channels = 4*hidden_dim,
+                kernel_size = 4,
+                stride = 1
+            ),
+            nn.BatchNorm2d(4*hidden_dim),
+            nn.ReLU(),
+
+            nn.ConvTranspose2d(
+                in_channels=4*hidden_dim,
+                out_channels=2*hidden_dim,
+                kernel_size=4,
+                stride=2,
+                padding=1
+            ),
+            nn.BatchNorm2d(2*hidden_dim),
+            nn.ReLU(),
+
+            nn.ConvTranspose2d(
+                in_channels=2*hidden_dim,
+                out_channels=hidden_dim,
+                kernel_size=4,
+                stride=2,
+                padding=1
+            ),
+            nn.BatchNorm2d(hidden_dim),
+            nn.ReLU(),
+
+            nn.ConvTranspose2d(
+                in_channels=hidden_dim,
+                out_channels=1,
+                kernel_size=4,
+                stride=2,
+                padding=1
+            ),
+            nn.Tanh()
+
+# ..\codes\GAN\trainer.py:1
+
+        D_x = self._netD(real_imgs)
+        loss_D_real = BCE_criterion(D_x, torch.ones(D_x.shape[0], device=self._device))
+
+        D_x = D_x.mean().item()
+        loss_D_real.backward()
+
+
+# ..\codes\GAN\trainer.py:2
+        D_G_z1 = self._netD(fake_imgs.detach())
+        loss_D_fake = BCE_criterion(D_G_z1, torch.zeros(D_G_z1.shape[0], device=self._device))
+
+        D_G_z1 = D_G_z1.mean().item()
+        loss_D_fake.backward()
+
+# ..\codes\GAN\trainer.py:3
+        D_G_z2 = self._netD(fake_imgs)
+        loss_G = BCE_criterion(D_G_z2, torch.ones(D_G_z2.shape[0], device=self._device))
+
+        D_G_z2 = D_G_z2.mean().item()
+
+
+########################
+# References
+########################
+
+########################
+# Other Modifications
+########################
+

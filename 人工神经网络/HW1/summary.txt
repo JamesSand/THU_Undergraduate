@@ -1,0 +1,208 @@
+########################
+# Filled Code
+########################
+# ..\codes\layers.py:1
+        self._saved_for_backward(input)
+
+        output = np.maximum(0, input)
+        return output
+
+# ..\codes\layers.py:2
+        input = self._saved_tensor
+        above_zero = input > 0
+        output = above_zero * grad_output
+        return output
+
+# ..\codes\layers.py:3
+        output = 1 / (1 + np.exp(-input))
+        self._saved_for_backward(output)
+        return output
+
+# ..\codes\layers.py:4
+        result = self._saved_tensor
+        # 求导结果是 result * (1 - result)
+        output = grad_output * result * (1 - result)
+        return output
+
+# ..\codes\layers.py:5
+
+        self._saved_for_backward(input)
+
+        inside = 0.044715 * input ** 3 + input
+        inside = inside * np.sqrt(2) / np.sqrt(np.pi)
+        tanh = np.tanh(inside)
+        tanh += 1
+        output = tanh * input * 0.5
+        return output
+
+# ..\codes\layers.py:6
+
+        const = 0.044715
+
+        input = self._saved_tensor
+        inside = const * input ** 3 + input
+        inside = inside * np.sqrt(2) / np.sqrt(np.pi)
+
+        output = 0.5 + 0.5 * np.tanh(inside) + 0.5 * input * (1 - np.tanh(inside) * np.tanh(inside)) * (np.sqrt(2) / np.sqrt(np.pi)) * (1 + 3 * const * input ** 2)
+        output = grad_output * output
+        return output
+
+# ..\codes\layers.py:7
+        # input 100 * 784 100 个样本 每个 784
+        # self.W 784 * 10
+        # output 100 * 10
+        # self.b 10 * 1
+
+        # 为反向传播保存
+        self._saved_for_backward(input)
+
+        output = np.matmul(input, self.W)
+        output = output + self.b
+        return output
+
+# ..\codes\layers.py:8
+        # grad_output 是 当前层 + 1 的 delta
+        # 最后要返回 当前层的 delta
+
+        # 上一层的输入
+        input = self._saved_tensor
+        self.grad_W = np.matmul(input.T, grad_output)
+        batch_size = grad_output.shape[0]
+        one = np.ones(batch_size)
+        self.grad_b = np.matmul(one.T, grad_output)
+
+        output = np.matmul(grad_output, self.W.T)
+        # print("grad w", self.grad_W.shape)
+        # print("grad b", self.grad_b.shape)
+        # print("output", output.shape)
+        # exit(0)
+        return output
+
+# ..\codes\loss.py:1
+        # input & target batch_size * 10
+        # output batch_size * 10
+        # print("target", target.shape)
+        # print("target")
+        # print(target)
+        # print("output")
+        # print(input)
+        # print("input", input.shape)
+        output = target - input
+        output = output ** 2 / 2
+        # 获取样本数
+        batch_size = output.shape[0]
+        # 两次 sum
+        output = np.sum(output)
+        output = np.sum(output)
+        # 除去样本数
+        output = output / batch_size
+        # print("loss")
+        # print(output)
+
+        return output
+
+# ..\codes\loss.py:2
+        #  这一步是第一个 delta
+        output = input - target
+        # 之后要除 batch size 所以这里先除掉
+        batch_size = output.shape[0]
+        output = output / batch_size
+        # print("delta0", output)
+        # exit(0)
+        return output
+
+# ..\codes\loss.py:3
+        batch_size = input.shape[0]
+        predict_size = input.shape[1]
+
+        # 计算 exp sum
+        exp = np.exp(input)
+        exp_sum = np.sum(exp, axis=1)
+        # 复制 10 份，这时候 exp_sum 是 10 * batch_size
+        exp_sum = np.tile(exp_sum, (predict_size, 1))
+        # 转置之后是 batch_size * 10
+        exp_sum = exp_sum.T
+
+        h = exp / exp_sum
+        # ln_h 的形状是 batch_size * 10
+        ln_h = np.log(h)
+        # 我们要做 ln_h * target.T 在取对角线元素之和
+        sum = np.matmul(ln_h, target.T)
+        sum = np.diag(sum)
+        # 这一步的 sum 是各个样本的 loss，直接保存
+        sum = -sum
+        sum = np.sum(sum)
+
+
+        output = sum / batch_size
+        return output
+
+# ..\codes\loss.py:4
+
+        batch_size = input.shape[0]
+        predict_size = input.shape[1]
+
+        # 算出来的结果是 h_k - t_k
+        # 计算 exp sum
+        exp = np.exp(input)
+        exp_sum = np.sum(exp, axis=1)
+        # 复制 10 份，这时候 exp_sum 是 10 * batch_size
+        exp_sum = np.tile(exp_sum, (predict_size, 1))
+        # 转置之后是 batch_size * 10
+        exp_sum = exp_sum.T
+
+        h = exp / exp_sum
+
+        output = h - target
+        output = output / batch_size
+
+        return output
+
+# ..\codes\loss.py:5
+        # # 取对角线之后就是正确坐标的 预测值
+        target_coord = np.matmul(input, target.T)
+        target_coord = np.diag(target_coord)
+
+        # 为了能够 广播
+        calculate_result = self.margin - target_coord + input.T
+        # 再变回来
+        calculate_result = calculate_result.T
+        calculate_result = np.maximum(0, calculate_result)
+
+        zero_matrix = 1 - target
+        output = calculate_result * zero_matrix
+
+        batch_size = input.shape[0]
+        output = output / batch_size
+
+        self._saved = output
+        return output
+
+# ..\codes\loss.py:6
+
+        output = self._saved > 0
+        above_matrix = -np.sum(output, axis=1)
+
+        target_matrix = target
+        target_matrix = target_matrix.T * above_matrix
+        target_matrix = target_matrix.T
+
+        output = output + target_matrix
+        batch_size = input.shape[0]
+        output = output / batch_size
+        return output
+
+
+########################
+# References
+########################
+
+########################
+# Other Modifications
+########################
+# _codes\layers.py -> ..\codes\layers.py
+# 66 -
+# 85 +
+# _codes\loss.py -> ..\codes\loss.py
+# 110 +         self.margin = margin
+
